@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Plant Intelligence System</title>
+  <meta name="description" content="IoT-driven real-time crop recommendation and plant disease risk detection dashboard powered by Machine Learning." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ── HEADER ──────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-icon">🌿</div>
+      <div>
+        <h1 class="header-title">Smart Plant Intelligence System</h1>
+        <p class="header-sub">DHT11 + Soil Sensor + Rain Sensor &nbsp;→&nbsp; ML Pipeline &nbsp;→&nbsp; Live Insights</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="server-badge" id="serverBadge">
+        <span class="badge-dot" id="badgeDot"></span>
+        <span id="badgeText">Connecting...</span>
+      </div>
+      <div class="auto-toggle">
+        <label class="toggle-label" for="autoToggle">Auto-update</label>
+        <label class="switch">
+          <input type="checkbox" id="autoToggle" checked />
+          <span class="slider-toggle"></span>
+        </label>
+      </div>
+      <div class="last-updated" id="lastUpdated">Never</div>
+    </div>
+  </header>
+
+  <!-- ── LIVE IOT FEED BAR ────────────────────────────────────── -->
+  <div class="iot-feed-bar" id="iotFeedBar">
+    <div class="iot-feed-inner">
+      <span class="iot-dot" id="iotDot"></span>
+      <span id="iotFeedText">Waiting for ESP8266...</span>
+      <div class="iot-live-values" id="iotLiveValues" style="display:none">
+        <span class="iot-chip">🌡️ <strong id="iot-t">--</strong>°C</span>
+        <span class="iot-chip">💧 <strong id="iot-h">--</strong>%</span>
+        <span class="iot-chip">🌱 <strong id="iot-s">--</strong>%</span>
+        <span class="iot-chip" id="iot-rain-chip">🌧️ <strong id="iot-r">--</strong></span>
+        <span class="iot-chip" id="iot-alerts-chip" style="display:none">🦠 <strong id="iot-ac">0</strong> alerts</span>
+        <span class="iot-ago" id="iotAgo"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN GRID ─────────────────────────────────────────────── -->
+  <main class="main-grid">
+
+    <!-- LEFT COLUMN: Sensor Inputs -->
+    <section class="panel sensor-panel" id="sensorPanel">
+      <div class="panel-header">
+        <span class="panel-icon">📡</span>
+        <h2 class="panel-title">Sensor Inputs</h2>
+        <span class="panel-badge">LIVE</span>
+      </div>
+
+      <div class="sensor-grid">
+
+        <div class="sensor-card" id="card-temp">
+          <div class="sensor-card-header">
+            <span class="sensor-icon">🌡️</span>
+            <span class="sensor-label">Temperature</span>
+            <span class="sensor-unit">°C</span>
+          </div>
+          <div class="sensor-value-display" id="val-temperature">--</div>
+          <input type="range" class="sensor-slider" id="temperature"
+                 min="8" max="44" step="0.5" value="25"
+                 oninput="updateDisplay('temperature', this.value)" />
+          <div class="slider-range"><span>8°C</span><span>44°C</span></div>
+        </div>
+
+        <div class="sensor-card" id="card-humidity">
+          <div class="sensor-card-header">
+            <span class="sensor-icon">💧</span>
+            <span class="sensor-label">Humidity</span>
+            <span class="sensor-unit">%</span>
+          </div>
+          <div class="sensor-value-display" id="val-humidity">--</div>
+          <input type="range" class="sensor-slider" id="humidity"
+                 min="14" max="100" step="1" value="65"
+                 oninput="updateDisplay('humidity', this.value)" />
+          <div class="slider-range"><span>14%</span><span>100%</span></div>
+        </div>
+
+        <div class="sensor-card" id="card-soil">
+          <div class="sensor-card-header">
+            <span class="sensor-icon">🌱</span>
+            <span class="sensor-label">Soil Moisture</span>
+            <span class="sensor-unit">%</span>
+          </div>
+          <div class="sensor-value-display" id="val-soil_moisture">--</div>
+          <input type="range" class="sensor-slider" id="soil_moisture"
+                 min="0" max="100" step="1" value="50"
+                 oninput="updateDisplay('soil_moisture', this.value)" />
+          <div class="slider-range"><span>Dry 0%</span><span>Wet 100%</span></div>
+        </div>
+
+        <div class="sensor-card rain-card" id="card-rain">
+          <div class="sensor-card-header">
+            <span class="sensor-icon">🌧️</span>
+            <span class="sensor-label">Rain Sensor</span>
+            <span class="sensor-unit">YL-83</span>
+          </div>
+          <!-- Binary toggle — mirrors the physical sensor's digital output -->
+          <button class="rain-toggle" id="rainToggle" onclick="toggleRain()" aria-pressed="false">
+            <span class="rain-toggle-icon" id="rainIcon">☀️</span>
+            <span class="rain-toggle-label" id="rainLabel">NO RAIN</span>
+          </button>
+          <div class="rain-hint">Tap to toggle · Syncs with ESP8266</div>
+        </div>
+
+      </div>
+
+      <button class="predict-btn" id="predictBtn" onclick="runPrediction()">
+        <span class="btn-icon">⚡</span> Get Prediction
+      </button>
+
+      <!-- Preset scenarios -->
+      <div class="presets">
+        <p class="presets-label">Quick Scenarios:</p>
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="loadPreset('monsoon')">🌧 Monsoon</button>
+          <button class="preset-btn" onclick="loadPreset('summer')">☀️ Hot Summer</button>
+          <button class="preset-btn" onclick="loadPreset('foggy')">🌫 Foggy Cold</button>
+          <button class="preset-btn" onclick="loadPreset('ideal')">✅ Ideal</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: Results -->
+    <div class="right-column">
+
+      <!-- Crop Recommendation Card -->
+      <section class="panel recommendation-panel" id="recommendationPanel">
+        <div class="panel-header">
+          <span class="panel-icon">🌾</span>
+          <h2 class="panel-title">Crop Recommendation</h2>
+        </div>
+        <div class="recommendation-content" id="recommendationContent">
+          <div class="placeholder-state">
+            <div class="placeholder-icon">🌱</div>
+            <p>Set sensor values and click<br><strong>Get Prediction</strong></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Disease Risk Panel -->
+      <section class="panel disease-panel" id="diseasePanel">
+        <div class="panel-header">
+          <span class="panel-icon">🦠</span>
+          <h2 class="panel-title">Disease Risk Alerts</h2>
+          <span class="alert-count-badge" id="alertCountBadge" style="display:none">0</span>
+        </div>
+        <div class="disease-content" id="diseaseContent">
+          <div class="placeholder-state">
+            <div class="placeholder-icon">🛡️</div>
+            <p>Run a prediction to check<br>for disease risk conditions</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- BOTTOM: Risk Flags -->
+    <section class="panel features-panel">
+      <div class="panel-header">
+        <span class="panel-icon">🔬</span>
+        <h2 class="panel-title">Risk Analysis</h2>
+      </div>
+      <div class="features-grid" id="featuresGrid">
+        <div class="feature-item">
+          <span class="feature-label">🔴 Fungal Risk</span>
+          <span class="feature-val" id="feat-fungal_risk">--</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">☀️ Drought Risk</span>
+          <span class="feature-val" id="feat-drought_risk">--</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-label">💧 Waterlogging Risk</span>
+          <span class="feature-val" id="feat-waterlog_risk">--</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- History Chart -->
+    <section class="panel chart-panel">
+      <div class="panel-header">
+        <span class="panel-icon">📈</span>
+        <h2 class="panel-title">Sensor Reading History</h2>
+        <span class="panel-sub">Last 20 readings</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="historyChart"></canvas>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <p>Running ML Pipeline...</p>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
