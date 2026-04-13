@@ -410,7 +410,8 @@ function initChart() {
 function updateChart(data) {
   if (!historyChart || !data.features) return;
 
-  const label = new Date(data.timestamp).toLocaleTimeString([], {
+  // Use browser's exact current time for real-time accuracy, avoiding timezone drift
+  const label = new Date().toLocaleTimeString([], {
     hour: "2-digit", minute: "2-digit", second: "2-digit"
   });
 
