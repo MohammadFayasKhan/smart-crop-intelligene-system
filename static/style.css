@@ -208,9 +208,18 @@ input:checked + .slider-toggle::before {
   display      : inline-flex;
   align-items  : center;
   gap          : 4px;
-  transition   : all 0.3s;
+  transition   : background 0.3s, border-color 0.3s;
 }
 .iot-chip strong { color: var(--green-bright); font-weight: 700; }
+
+/* Flash animation when new ESP8266 data arrives */
+@keyframes chipFlash {
+  0%   { background: rgba(82,183,136,0.45); border-color: rgba(82,183,136,0.8);
+         box-shadow: 0 0 10px rgba(82,183,136,0.4); }
+  100% { background: rgba(82,183,136,0.1);  border-color: rgba(82,183,136,0.25);
+         box-shadow: none; }
+}
+.iot-chip.chip-flash { animation: chipFlash 0.7s ease-out forwards; }
 
 #iot-alerts-chip {
   background  : rgba(239, 35, 60, 0.12);
@@ -219,10 +228,35 @@ input:checked + .slider-toggle::before {
 #iot-alerts-chip strong { color: #ff6b6b; }
 
 .iot-ago {
-  font-size: 10px;
-  color    : var(--text-muted);
+  font-size : 10px;
+  color     : var(--text-muted);
   margin-left: auto;
+  min-width : 60px;
+  text-align: right;
+  transition: color 0.3s;
 }
+
+/* Scan shimmer on the bar when ESP8266 is connected */
+.iot-feed-bar { position: relative; overflow: hidden; }
+.iot-feed-bar.iot-online::after {
+  content   : "";
+  position  : absolute;
+  top       : 0;
+  left      : -80px;
+  width     : 80px;
+  height    : 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(82,183,136,0.12),
+    transparent);
+  animation: barScan 3.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes barScan {
+  from { left: -80px; }
+  to   { left: 110%;  }
+}
+
 
 /* ── Main Grid ────────────────────────────────────────────────────── */
 .main-grid {
@@ -327,7 +361,14 @@ input:checked + .slider-toggle::before {
   text-align   : center;
   margin       : 8px 0;
   letter-spacing: -0.5px;
+  transition   : color 0.3s;
 }
+
+@keyframes valueFlash {
+  0%   { color: #ffffff; text-shadow: 0 0 14px var(--green-bright), 0 0 28px rgba(87,204,153,0.5); }
+  100% { color: var(--green-bright); text-shadow: none; }
+}
+.value-flash { animation: valueFlash 0.6s ease-out forwards; }
 
 .sensor-slider {
   width     : 100%;

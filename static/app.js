@@ -59,6 +59,7 @@ let chartTemp     = [];
 let chartHumidity = [];
 let chartRainBin  = [];           // 0 / 1 values
 let lastIotTs     = null;
+let iotLastTimestamp = null;      // stores ESP8266 reading time for live ago ticker
 let rainState     = 0;            // current binary rain value (0 = dry, 1 = raining)
 
 // ── Init ───────────────────────────────────────────────────────────
@@ -68,12 +69,28 @@ window.addEventListener("DOMContentLoaded", () => {
   checkServerHealth();
   startAutoUpdate();
   startIotPoll();
+  startAgoTicker();   // live 1-second ago counter — never freezes
 
   document.getElementById("autoToggle").addEventListener("change", (e) => {
     if (e.target.checked) startAutoUpdate();
     else                   stopAutoUpdate();
   });
 });
+
+// ── Live "ago" ticker ──────────────────────────────────────────────
+// Runs every 1 second, completely independent of the 10s IoT poll.
+// Fixes the "330m ago" bug where the counter only updated on poll.
+function startAgoTicker() {
+  setInterval(() => {
+    if (!iotLastTimestamp) return;
+    const ago = Math.round((Date.now() - new Date(iotLastTimestamp)) / 1000);
+    const el  = document.getElementById("iotAgo");
+    if (!el) return;
+    if      (ago < 60)    el.textContent = `${ago}s ago`;
+    else if (ago < 3600)  el.textContent = `${Math.floor(ago / 60)}m ${ago % 60}s ago`;
+    else                  el.textContent = `${Math.floor(ago / 3600)}h ago`;
+  }, 1000);
+}
 
 // ── Slider display init ────────────────────────────────────────────
 function initSliderDisplays() {
@@ -87,7 +104,13 @@ function initSliderDisplays() {
 
 function updateDisplay(id, value) {
   const el = document.getElementById("val-" + id);
-  if (el) el.textContent = parseFloat(value).toFixed(1);
+  if (el) {
+    el.textContent = parseFloat(value).toFixed(1);
+    // Smooth flash animation on every update
+    el.classList.remove("value-flash");
+    void el.offsetWidth;   // force reflow to restart animation
+    el.classList.add("value-flash");
+  }
   colourCard(id, parseFloat(value));
 }
 
@@ -283,7 +306,7 @@ function renderDiseaseAlerts(data) {
           <span class="disease-type-badge">${d.type}</span>
           <span class="disease-severity-label" style="color:${color}">${d.severity}</span>
         </div>
-        <div class="disease-body" id="disease-body-${i}">
+        <div class="disease-body open" id="disease-body-${i}">
           <div class="disease-field"><strong>🎯 Trigger</strong><p>${d.trigger}</p></div>
           <div class="disease-field"><strong>🔍 Symptoms</strong><p>${d.symptoms}</p></div>
           <div class="disease-field"><strong>💊 Treatment</strong><p>${d.pesticide}</p></div>
@@ -291,13 +314,7 @@ function renderDiseaseAlerts(data) {
         </div>
       </div>`;
   }).join("");
-
-  // Auto-expand CRITICAL alerts
-  alerts.forEach((d, i) => {
-    if (d.severity === "CRITICAL") {
-      document.getElementById(`disease-body-${i}`)?.classList.add("open");
-    }
-  });
+  // All cards start open — user can click header to collapse individually
 }
 
 function toggleDisease(i) {
@@ -486,22 +503,40 @@ function setIotBar(online, statusText, data, ago) {
 
   if (online && data) {
     vals.style.display = "flex";
-    document.getElementById("iot-t").textContent = data.temperature;
-    document.getElementById("iot-h").textContent = data.humidity;
-    document.getElementById("iot-s").textContent = data.soil_moisture;
 
-    // Show binary rain status (not mm)
+    // Save timestamp for the live 1-second ago ticker
+    if (data.timestamp) iotLastTimestamp = data.timestamp;
+
+    // Update chip values with flash animation
+    const flashChip = (id, value) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value;
+      el.closest(".iot-chip")?.classList.remove("chip-flash");
+      void el.closest(".iot-chip")?.offsetWidth;
+      el.closest(".iot-chip")?.classList.add("chip-flash");
+    };
+
+    flashChip("iot-t", data.temperature);
+    flashChip("iot-h", data.humidity);
+    flashChip("iot-s", data.soil_moisture);
+
+    // Rain chip
     const rainEl   = document.getElementById("iot-r");
     const rainChip = document.getElementById("iot-rain-chip");
     if (rainEl) {
       const isRaining = data.rain === 1;
       rainEl.textContent  = isRaining ? "RAIN" : "DRY";
       if (rainChip) {
-        rainChip.style.background    = isRaining ? "rgba(76,201,240,0.15)" : "rgba(82,183,136,0.1)";
-        rainChip.style.borderColor   = isRaining ? "rgba(76,201,240,0.4)"  : "rgba(82,183,136,0.25)";
+        rainChip.style.background  = isRaining ? "rgba(76,201,240,0.15)" : "rgba(82,183,136,0.1)";
+        rainChip.style.borderColor = isRaining ? "rgba(76,201,240,0.4)"  : "rgba(82,183,136,0.25)";
+        rainChip.classList.remove("chip-flash");
+        void rainChip.offsetWidth;
+        rainChip.classList.add("chip-flash");
       }
     }
 
+    // Alert chip
     if (data.alert_count > 0) {
       acChip.style.display = "inline-flex";
       document.getElementById("iot-ac").textContent = data.alert_count;
@@ -509,11 +544,14 @@ function setIotBar(online, statusText, data, ago) {
       acChip.style.display = "none";
     }
 
-    if (agoEl && ago !== undefined) {
-      agoEl.textContent = ago < 60 ? `${ago}s ago` : `${Math.floor(ago / 60)}m ago`;
+    // ago is now handled by the live ticker — just seed the timestamp
+    if (agoEl && !iotLastTimestamp) {
+      agoEl.textContent = "just now";
     }
+
   } else {
-    vals.style.display = "none";
+    vals.style.display  = "none";
+    iotLastTimestamp    = null;
   }
 }
 
