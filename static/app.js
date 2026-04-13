@@ -79,11 +79,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // ── Live "ago" ticker ──────────────────────────────────────────────
 // Runs every 1 second, completely independent of the 10s IoT poll.
-// Fixes the "330m ago" bug where the counter only updated on poll.
+// Uses browser's own clock (Date.now()) for accuracy — not server time.
 function startAgoTicker() {
   setInterval(() => {
     if (!iotLastTimestamp) return;
-    const ago = Math.round((Date.now() - new Date(iotLastTimestamp)) / 1000);
+    const ago = Math.round((Date.now() - iotLastTimestamp) / 1000);
     const el  = document.getElementById("iotAgo");
     if (!el) return;
     if      (ago < 60)    el.textContent = `${ago}s ago`;
@@ -504,8 +504,9 @@ function setIotBar(online, statusText, data, ago) {
   if (online && data) {
     vals.style.display = "flex";
 
-    // Save timestamp for the live 1-second ago ticker
-    if (data.timestamp) iotLastTimestamp = data.timestamp;
+    // Save browser's receive time for the live ago ticker
+    // Using Date.now() instead of server timestamp avoids timezone/clock drift
+    iotLastTimestamp = Date.now();
 
     // Update chip values with flash animation
     const flashChip = (id, value) => {
@@ -563,8 +564,8 @@ function showLoading(visible) {
 function setLastUpdated(isoStr) {
   const el = document.getElementById("lastUpdated");
   if (!el) return;
-  try { el.textContent = "Updated " + new Date(isoStr).toLocaleTimeString(); }
-  catch { el.textContent = "Updated just now"; }
+  // Always use browser's current time for accuracy
+  el.textContent = "Updated " + new Date().toLocaleTimeString();
 }
 
 function showError(msg) {

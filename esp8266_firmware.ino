@@ -103,16 +103,15 @@ const char* WIFI_PASS   = "777888666";            // WiFi password
 //     Set USE_NGROK true (and USE_CLOUD false).
 //
 // ─────────────────────────────────────────────────────────────────────
-#define USE_CLOUD false   // ← set true once your HF Space is live
-#define USE_NGROK false   // ← ngrok fallback (local Mac must run start.sh)
+#define USE_CLOUD true    // ✅ HF Spaces — always-on cloud
+#define USE_NGROK false   //    ngrok fallback (keep false)
 
 // LOCAL mode — Mac IP on same WiFi/hotspot (only used when USE_CLOUD false)
 const char* SERVER_IP   = "172.20.10.2";   // ← your Mac hotspot IP
 const int   SERVER_PORT = 8000;
 
-// HF SPACES URL — only used when USE_CLOUD true
-// Format: https://<hf-username>-<space-name>.hf.space
-const char* HF_SPACE_URL = "https://YOUR_USERNAME-smart-plant.hf.space";
+// HF SPACES URL — active because USE_CLOUD true
+const char* HF_SPACE_URL = "https://Fayasx-smart-plant.hf.space";
 
 // NGROK URL — only used when USE_NGROK true
 const char* NGROK_URL = "https://quartered-irritable-showcase.ngrok-free.dev";

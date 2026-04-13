@@ -145,7 +145,7 @@ input:checked + .slider-toggle::before {
   color    : var(--text-muted);
 }
 
-/* ── IoT Live Feed Bar ────────────────────────────────────────────── */
+/* ── IoT Live Feed Bar ──────────────────────────────────────── */
 .iot-feed-bar {
   display        : flex;
   align-items    : center;
@@ -155,9 +155,8 @@ input:checked + .slider-toggle::before {
   font-weight    : 500;
   transition     : background 0.4s, border-color 0.4s;
   min-height     : 40px;
-  position       : sticky;
-  top            : 61px;
-  z-index        : 90;
+  /* NOT sticky — prevents overlap with header on all screen sizes */
+  background     : var(--bg-base);
 }
 
 .iot-feed-bar.iot-online {
@@ -468,7 +467,7 @@ input:checked + .slider-toggle::before {
   justify-content: center;
   gap            : 8px;
   letter-spacing : 0.03em;
-  margin-bottom  : 14px;
+  margin-bottom  : 8px;
 }
 .predict-btn:hover {
   background  : linear-gradient(135deg, #225522, #1a4a1a);
@@ -479,8 +478,7 @@ input:checked + .slider-toggle::before {
 .btn-icon { font-size: 16px; }
 
 /* Presets */
-.presets { }
-.presets-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.presets-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
 .preset-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
 .preset-btn {
