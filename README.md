@@ -1,3 +1,15 @@
+---
+title: Smart Plant Intelligence System
+emoji: 🌿
+colorFrom: green
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: true
+license: mit
+short_description: IoT crop recommendation and disease detection powered by ML
+---
+
 <div align="center">
   <img src="https://cdn-icons-png.flaticon.com/512/1892/1892751.png" alt="Smart Plant System Logo" width="120" />
   <h1>🌿 SMART PLANT INTELLIGENCE SYSTEM</h1>
